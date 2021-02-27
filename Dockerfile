@@ -1,6 +1,6 @@
-FROM java:14-alpine
+FROM openjdk:14-alpine
 ADD target/mysql-mybatis-code-gen-8-0.0.1-SNAPSHOT.jar app.jar
-# 应用运行时暴露端口8080
+# 应用运行时暴露端口8081
 EXPOSE 8081
 # 指定容器运行时的默认命令
 ENTRYPOINT ["java","-jar","/app.jar"]
