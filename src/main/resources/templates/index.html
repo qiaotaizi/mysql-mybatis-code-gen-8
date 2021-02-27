@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+</head>
+<body>
+<div>
+    <span>* 请遵循以下建表规范：</span>
+    <ol>
+        <li>表名和字段名使用'_'进行分词</li>
+        <li>表名和字段名使用大写字母</li>
+        <li>原则上每张表都应具备ID、CREATE_TIME、UPDATE_TIME三个基础字段</li>
+    </ol>
+</div>
+<form id="selectTableForm" action="/gen/index">
+    <label>按表名搜索：
+    <input type="text" placeholder="输入表名模糊查询" name="name">
+    </label>
+</form>
+<table border="1">
+    <tr>
+        <th>表名</th>
+        <th>表注释</th>
+        <th>操作</th>
+    </tr>
+    <tr  th:each="table : ${tables}">
+        <td th:text="${table.tableName}"></td>
+        <td th:text="${table.tableDesc}"></td>
+        <td >
+            <a th:href="@{'/gen/pojo/?table='+${table.tableName}}">POJO属性</a>
+            <a th:href="@{'/gen/mapper/?table='+${table.tableName}}">mapper常用节点</a>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

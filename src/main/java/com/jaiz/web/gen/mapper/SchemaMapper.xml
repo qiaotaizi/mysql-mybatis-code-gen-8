@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jaiz.web.gen.mapper.SchemaMapper">
+
+    <resultMap id="schemaMap" type="com.jaiz.web.gen.eneity.TablesVO">
+        <result column="TABLE_NAME" property="tableName" />
+        <result column="TABLE_COMMENT" property="tableDesc" />
+    </resultMap>
+
+    <select id="selectTablesBySchemaName" resultMap="schemaMap">
+        select TABLE_NAME,TABLE_COMMENT from information_schema.TABLES
+        where TABLE_SCHEMA=#{schemaName}
+        <if test="name!=null">
+            AND TABLE_NAME LIKE concat('%',#{name},'%')
+        </if>
+        order by TABLE_NAME
+    </select>
+
+    <resultMap id="columnsMap" type="com.jaiz.web.gen.eneity.ColumnsVO">
+        <result property="columnName" column="COLUMN_NAME" />
+        <result property="dataType" column="DATA_TYPE" />
+        <result property="numericPrecision" column="NUMERIC_PRECISION" />
+        <result property="numericScale" column="NUMERIC_SCALE" />
+        <result property="columnComment" column="COLUMN_COMMENT" />
+        <result property="columnKey" column="COLUMN_KEY" />
+        <result property="ordinalPosition" column="ORDINAL_POSITION" />
+    </resultMap>
+
+    <select id="selectColumnsByTableName" resultMap="columnsMap">
+        select COLUMN_NAME,DATA_TYPE,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_COMMENT,COLUMN_KEY,ORDINAL_POSITION
+        from information_schema.COLUMNS
+        where
+            TABLE_SCHEMA=#{schema}
+          and
+            TABLE_NAME=#{name}
+        order by ORDINAL_POSITION
+    </select>
+
+</mapper>

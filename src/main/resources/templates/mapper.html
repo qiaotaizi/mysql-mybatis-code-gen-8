@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${tableName}+'mapper常用节点'"></title>
+    <script type="text/javascript" src="/js/copy.js"></script>
+    <script type="text/javascript" src="/js/showHide.js"></script>
+</head>
+<body>
+<span th:text="${tableName}+'的mapper常用节点'"></span>
+<br/>
+<br/>
+<span>包含所有字段的sql片段</span>
+<button onclick="copyToClip('columnsDiv')">复制</button>
+<button onclick="showOrHide('columnsDiv')">显示/隐藏</button>
+<div id="columnsDiv" class="codeRegion" style="display: none">
+    <span>&lt;sql id="fullColumns"&gt;</span>
+    <br/>
+    <span th:each="cn,stat:${mapperNodes.columnNames}">
+            <span th:text="${cn}+(${stat.last}?'':',')"></span>
+        </span>
+    <br/>
+    <span>&lt;/sql&gt;</span>
+</div>
+
+<br/>
+<br/>
+<span>resultMap节点</span>
+<button onclick="copyToClip('resultMapDiv')">复制</button>
+<button onclick="showOrHide('resultMapDiv')">显示/隐藏</button>
+<div id="resultMapDiv" class="codeRegion" style="display: none">
+    <span>&lt;resultMap id="fullMap" type="java实体类的全限定名"&gt;</span>
+    <br/>
+    <span>&lt;id column="ID" property="id" /&gt;</span>
+    <br/>
+    <span th:each="cp:${mapperNodes.resultMapCpPairs}">
+        &lt;result column="<span th:text="${cp.left}"></span>" property="<span th:text="${cp.right}"></span>" /&gt;<br/>
+    </span>
+    <span>&lt;result column="CREATE_TIME" property="createTime" /&gt;</span>
+    <br/>
+    <span>&lt;result column="UPDATE_TIME" property="updateTime" /&gt;</span>
+    <br/>
+    <span>&lt;/resultMap&gt;</span>
+</div>
+
+
+<br/>
+<br/>
+<span>选择update节点</span>
+<button onclick="copyToClip('updateDiv')">复制</button>
+<button onclick="showOrHide('updateDiv')">显示/隐藏</button>
+<div id="updateDiv" class="codeRegion" style="display: none">
+    <span>&lt;update id="update"&gt;</span><br/>
+    UPDATE <span th:text="${tableName}"></span><br/>
+    <span>&lt;set&gt;</span><br/>
+    <span th:each="cp:${mapperNodes.updateInsertCpPairs}">
+        &lt;if test="#{<span th:text="${cp.right}"></span>} != null"&gt;<br/>
+        <span th:text="${cp.left+' = #{'+cp.right+'},'}"></span><br/>
+        &lt;/if&gt;<br/>
+    </span>
+    <span>&lt;/set&gt;</span><br/>
+    <span>WHERE ID=#{id}</span><br/>
+    <span>&lt;/update&gt;</span>
+</div>
+
+<br/>
+<br/>
+<span>选择insert节点</span>
+<button onclick="copyToClip('insertSelectiveDiv')">复制</button>
+<button onclick="showOrHide('insertSelectiveDiv')">显示/隐藏</button>
+<div id="insertSelectiveDiv" class="codeRegion" style="display: none">
+    <span>&lt;insert id="insertSelective"&gt;</span><br/>
+    <span>INSERT INTO </span><span th:text="${tableName}"></span><br/>
+    <span>(</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        &lt;if test="#{<span th:text="${cp.right}"></span>} != null"&gt;<br/>
+        <span th:text="${cp.left}"></span><span th:text="${stat.last}?'':','"></span><br/>
+        &lt;/if&gt;<br/>
+    </span>
+    <span>) VALUES (</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        &lt;if test="#{<span th:text="${cp.right}"></span>} != null"&gt;<br/>
+        <span th:text="'#{'+${cp.right}+'}'"></span><span th:text="${stat.last}?'':','"></span><br/>
+        &lt;/if&gt;<br/>
+            </span>
+    <span>)</span><br/>
+    <span>&lt;/insert&gt;</span>
+</div>
+
+<br/>
+<br/>
+<span>全量insert节点</span>
+<button onclick="copyToClip('insertDiv')">复制</button>
+<button onclick="showOrHide('insertDiv')">显示/隐藏</button>
+<div id="insertDiv" class="codeRegion" style="display:none">
+    <span>&lt;insert id="insert"&gt;</span><br/>
+    <span>INSERT INTO </span><span th:text="${tableName}"></span><br/>
+    <span>(</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        <span th:text="${cp.left}"></span><span th:text="${stat.last}?'':','"></span><br/>
+    </span>
+    <span>) VALUES (</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        <span th:text="'#{'+${cp.right}+'}'"></span><span th:text="${stat.last}?'':','"></span><br/>
+            </span>
+    <span>)</span><br/>
+    <span>&lt;/insert&gt;</span><br/>
+</div>
+</body>
+</html>
