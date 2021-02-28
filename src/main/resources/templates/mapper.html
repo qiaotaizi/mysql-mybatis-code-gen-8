@@ -69,7 +69,7 @@
 <button onclick="copyToClip('insertSelectiveDiv')">复制</button>
 <button onclick="showOrHide('insertSelectiveDiv')">显示/隐藏</button>
 <div id="insertSelectiveDiv" class="codeRegion" style="display: none">
-    <span>&lt;insert id="insertSelective"&gt;</span><br/>
+    <span>&lt;insert id="insertSelective" useGeneratedKeys="true" keyProperty="id" keyColumn="ID"&gt;</span><br/>
     <span>INSERT INTO </span><span th:text="${tableName}"></span><br/>
     <span>(</span><br/>
     <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
@@ -93,7 +93,7 @@
 <button onclick="copyToClip('insertDiv')">复制</button>
 <button onclick="showOrHide('insertDiv')">显示/隐藏</button>
 <div id="insertDiv" class="codeRegion" style="display:none">
-    <span>&lt;insert id="insert"&gt;</span><br/>
+    <span>&lt;insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="ID"&gt;</span><br/>
     <span>INSERT INTO </span><span th:text="${tableName}"></span><br/>
     <span>(</span><br/>
     <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
