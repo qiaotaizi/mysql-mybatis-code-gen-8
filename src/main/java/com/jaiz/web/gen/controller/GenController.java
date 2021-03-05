@@ -1,21 +1,17 @@
 package com.jaiz.web.gen.controller;
 
-import com.jaiz.web.gen.eneity.MapperNodesVO;
 import com.jaiz.web.gen.eneity.PojoPropertiesVO;
 import com.jaiz.web.gen.eneity.TablesVO;
 import com.jaiz.web.gen.service.IndexService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.jta.SpringJtaSynchronizationAdapter;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.sql.DataSource;
 import java.util.List;
 
 @Slf4j
@@ -69,6 +65,21 @@ public class GenController {
         model.addAttribute("mapperNodes",mapperNodes);
         model.addAttribute("tableName",name);
         return "mapper";
+    }
+
+    @GetMapping("template")
+    public String genTemplate(Model model,@RequestParam("table") String name){
+        var unitTestMeta=indexService.selectUnitTestMeta(name);
+        model.addAttribute("unitTestMeta",unitTestMeta);
+        var mapperNodes=indexService.selectMapperNodes(name);
+        model.addAttribute("mapperNodes",mapperNodes);
+        String pojoName=indexService.dash2Camel(name);
+        String pojoClassName= Character.toUpperCase(pojoName.charAt(0))+pojoName.substring(1);
+        model.addAttribute("pojoName",pojoClassName);
+        model.addAttribute("tableName",name);
+        List<PojoPropertiesVO> props=indexService.selectPojoProperties(name);
+        model.addAttribute("props",props);
+        return "templ";
     }
 
 }

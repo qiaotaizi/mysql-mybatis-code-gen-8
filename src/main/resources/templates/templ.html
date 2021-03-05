@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>模板代码</title>
+    <script type="text/javascript" src="/js/copy.js"></script>
+    <script type="text/javascript" src="/js/showHide.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/codeRegion.css" />
+</head>
+<body>
+<span th:text="'表名：'+${tableName}+'，类名：'+${pojoName}"></span>
+<br/>
+<br/>
+<span>pojo类</span>
+<button onclick="copyToClip('pojoTemp')">复制</button>
+<button onclick="showOrHide('pojoTemp')">显示/隐藏</button>
+<div id="pojoTemp" class="codeRegion" style="display: none">
+    <p th:each="prop:${props}">
+        /**<br/>
+        * <span th:text="${prop.propertyDesc}"></span><br/>
+        */<br/>
+        private <span th:text="${prop.propertyType}"></span> <span th:text="${prop.propertyName}"></span>;
+    </p>
+</div>
+
+<br/>
+<br/>
+<span>mapper接口</span>
+<button onclick="copyToClip('mapperIface')">复制</button>
+<button onclick="showOrHide('mapperIface')">显示/隐藏</button>
+<div id="mapperIface" class="codeRegion" style="display: none">
+    /**<br/>
+    * <span>全量insert</span><br/>
+    */<br/>
+    <span>int insert(</span><span th:text="${pojoName}"></span><span> param);</span><br/><br/>
+    /**<br/>
+    * <span>根据ID查询</span><br/>
+    */<br/>
+    <span th:text="${pojoName}"></span><span> selectById(@Param("id")Long id);</span><br/><br/>
+    /**<br/>
+    * <span>根据ID对非空字段更新</span><br/>
+    */<br/>
+    <span>int updateSelective(</span><span th:text="${pojoName}"></span><span> param);</span><br/><br/>
+    /**<br/>
+    * <span>根据id删除记录</span><br/>
+    */<br/>
+    <span>int deleteById(@Param("id")Long id);</span><br/><br/>
+</div>
+
+
+<br/>
+<br/>
+<span>mapper.xml</span>
+<button onclick="copyToClip('mapperXml')">复制</button>
+<button onclick="showOrHide('mapperXml')">显示/隐藏</button>
+<div id="mapperXml" class="codeRegion" style="display: none">
+    <span>&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span><br/>
+    <span>&lt;!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"&gt;</span><br/>
+    <span>&lt;mapper namespace="</span><span th:text="${pojoName}"></span><span>"&gt;</span><br/>
+    <span>&lt;!-- 全量字段 --&gt;</span><br/>
+    <span>&lt;sql id="fullColumns"&gt;</span>
+    <br/>
+    <span th:each="cn,stat:${mapperNodes.columnNames}">
+            <span th:text="${cn}+(${stat.last}?'':',')"></span>
+        </span>
+    <br/>
+    <span>&lt;/sql&gt;</span><br /><br />
+
+    <span>&lt;!-- 全量字段resultMap --&gt;</span><br/>
+    <span>&lt;resultMap id="fullMap" type="</span><span th:text="${pojoName}"></span><span>"&gt;</span>
+    <br/>
+    <span>&lt;id column="ID" property="id" /&gt;</span>
+    <br/>
+    <span th:each="cp:${mapperNodes.resultMapCpPairs}">
+        &lt;result column="<span th:text="${cp.left}"></span>" property="<span th:text="${cp.right}"></span>" /&gt;<br/>
+    </span>
+    <span>&lt;result column="CREATE_TIME" property="createTime" /&gt;</span>
+    <br/>
+    <span>&lt;result column="UPDATE_TIME" property="updateTime" /&gt;</span>
+    <br/>
+    <span>&lt;/resultMap&gt;</span><br /><br />
+
+    <span>&lt;!-- 根据id查询 --&gt;</span><br/>
+    <span>&lt;select id="selectById" resultMap="fullMap"&gt;</span><br />
+    <span>SELECT &lt;include refid="fullColumns" /&gt; FROM </span><span th:text="${tableName}"></span><span> WHERE ID = #{id}</span><br />
+    <span>&lt;/select&gt;</span><br />
+
+    <span>&lt;!-- 根据id更新非空字段 --&gt;</span><br/>
+    <span>&lt;update id="updateSelective"&gt;</span><br/>
+    UPDATE <span th:text="${tableName}"></span><br/>
+    <span>&lt;set&gt;</span><br/>
+    <span th:each="cp:${mapperNodes.updateInsertCpPairs}">
+        &lt;if test="#{<span th:text="${cp.right}"></span>} != null"&gt;<br/>
+        <span th:text="${cp.left+' = #{'+cp.right+'},'}"></span><br/>
+        &lt;/if&gt;<br/>
+    </span>
+    <span>&lt;/set&gt;</span><br/>
+    <span>WHERE ID=#{id}</span><br/>
+    <span>&lt;/update&gt;</span><br /><br />
+
+    <span>&lt;!-- 全量insert --&gt;</span><br/>
+    <span>&lt;insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="ID"&gt;</span><br/>
+    <span>INSERT INTO </span><span th:text="${tableName}"></span><br/>
+    <span>(</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        <span th:text="${cp.left}"></span><span th:text="${stat.last}?'':','"></span><br/>
+    </span>
+    <span>) VALUES (</span><br/>
+    <span th:each="cp,stat:${mapperNodes.updateInsertCpPairs}">
+        <span th:text="'#{'+${cp.right}+'}'"></span><span th:text="${stat.last}?'':','"></span><br/>
+            </span>
+    <span>)</span><br/>
+    <span>&lt;/insert&gt;</span><br/><br/>
+
+    <span>&lt;!-- 根据id删除 --&gt;</span><br/>
+    <span>&lt;delete id="deleteById"&gt;</span><br/>
+    <span>DELETE FROM </span><span th:text="${tableName}"></span><span> WHERE ID = #{id}</span><br/>
+    <span>&lt;/delete&gt;</span><br/>
+    <span>&lt;/mapper&gt;</span>
+</div>
+
+<br/>
+<br/>
+<span>单元测试代码</span>
+<button onclick="copyToClip('crudTester')">复制</button>
+<button onclick="showOrHide('crudTester')">显示/隐藏</button>
+<div id="crudTester" class="codeRegion" style="display: none">
+    <span>@Test</span><br/>
+    <span>@Transactional</span><br/>
+    <span>@Rollback</span><br/>
+    <span>public void baseCrudTest(){</span><br/>
+    <span>//初始化测试字段</span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span th:text="${insertMeta.dataType}+' '+${insertMeta.varName}+'Insert = '+${insertMeta.varValue}+';'"></span><br />
+    </span>
+    <span>//new对象并set</span><br/>
+    <span th:text="${pojoName}+' insertParam = new '+${pojoName}+'();'"></span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span th:text="'insertParam.'+${insertMeta.setterName}+'('+${insertMeta.varName}+'Insert'+');'"></span><br />
+    </span>
+    <span>//测试insert</span><br/>
+    <span>theMapper.insert(insertParam);</span><br/>
+    <span>//检查自增id非空</span><br/>
+    <span>Long id=insertParam.getId();</span><br/>
+    <span>Assert.assertNotNull("自增id为空",id);</span><br/>
+    <span>//测试selectById</span><br/>
+    <span th:text="${pojoName}+' selected = theMapper.selectById(id);'"></span><br/>
+    <span>//检查对象非空</span><br/>
+    <span>Assert.assertNotNull("数据库记录为空",selected);</span><br/>
+    <span>//字段比对</span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span>Assert.assertEquals("</span><span th:text="${insertMeta.varName}"></span><span>比对失败",</span>
+        <span th:text="${insertMeta.varName}+'Insert , selected.'+${insertMeta.getterName}+'());'"></span>
+        <br />
+    </span>
+    <span>//初始化update测试字段</span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span th:text="${insertMeta.dataType}+' '+${insertMeta.varName}+'Update = '+${insertMeta.varValueUpdated}+';'"></span><br />
+    </span>
+    <span>//new对象并set</span><br/>
+    <span th:text="${pojoName}+' updateParam = new '+${pojoName}+'();'"></span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span th:text="'updateParam.'+${insertMeta.setterName}+'('+${insertMeta.varName}+'Update'+');'"></span><br />
+    </span>
+    <span>updateParam.setId(id);</span><br/>
+    <span>//测试update</span><br/>
+    <span>theMapper.updateSelective(updateParam);</span><br/>
+    <span>//查询更新后的结果</span><br/>
+    <span th:text="${pojoName}+' updated = theMapper.selectById(id);'"></span><br/>
+    <span>//检查对象非空</span><br/>
+    <span>Assert.assertNotNull("更新后查询失败",updated);</span><br/>
+    <span>//字段比对</span><br/>
+    <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
+        <span>Assert.assertEquals("</span><span th:text="${insertMeta.varName}"></span><span>比对失败",</span>
+        <span th:text="${insertMeta.varName}+'Update , updated.'+${insertMeta.getterName}+'());'"></span>
+        <br />
+    </span>
+    <span>//测试deleteById</span><br/>
+    <span>theMapper.deleteById(id);</span><br/>
+    <span>//测试是否能在删除后查询出来</span><br/>
+    <span th:text="${pojoName}+' deleted = theMapper.selectById(id);'"></span><br/>
+    <span>Assert.assertNull("执行delete后不应查出数据",deleted);</span><br/>
+    <span>}</span><br/>
+</div>
+</body>
+</html>

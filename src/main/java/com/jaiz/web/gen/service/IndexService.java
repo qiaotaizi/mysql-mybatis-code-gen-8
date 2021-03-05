@@ -1,20 +1,13 @@
 package com.jaiz.web.gen.service;
 
-import com.jaiz.web.gen.eneity.ColumnsVO;
-import com.jaiz.web.gen.eneity.MapperNodesVO;
-import com.jaiz.web.gen.eneity.PojoPropertiesVO;
-import com.jaiz.web.gen.eneity.TablesVO;
+import com.jaiz.web.gen.eneity.*;
 import com.jaiz.web.gen.mapper.SchemaMapper;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,28 +52,48 @@ public class IndexService {
     }
 
     /**
+     * 根据字段类型给出随机值
+     * @param propertyType
+     * @return
+     */
+    private String randomValueInsert(String propertyType) {
+        return switch (propertyType) {
+            case "Long" -> "123L";
+            case "String" -> "\"RandomString\"";
+            case "Integer" -> "123";
+            case "Integer/Boolean" -> "123/true";
+            case "Double" -> "123.0";
+            case "Date" -> "DateUtil.parse(\"2021-01-01 03:02:01\")";
+            default -> throw new RuntimeException("不识别的类型，请补充至源代码");
+        };
+    }
+    private String randomValueUpdate(String propertyType) {
+        return switch (propertyType) {
+            case "Long" -> "321L";
+            case "String" -> "\"StringRandom\"";
+            case "Integer" -> "321";
+            case "Integer/Boolean" -> "321/false";
+            case "Double" -> "321.2";
+            case "Date" -> "DateUtil.parse(\"2021-02-02 01:02:03\")";
+            default -> throw new RuntimeException("不识别的类型，请补充至源代码");
+        };
+    }
+
+    /**
      * mysql数据库数据类型转java类型
      * @param dataType
      * @return
      */
     private String mysqlType2JavaType(String dataType) {
-        switch (dataType){
-            case "bigint":
-                return "Long";
-            case "varchar":
-                return "String";
-            case "int":
-                return "Integer";
-            case "tinyint":
-                return "Integer/Boolean";
-            case "double":
-                return "Double";
-            case "datetime":
-            case "timestamp":
-                return "Date";
-            default:
-                throw new RuntimeException("不识别的类型，请补充至源代码");
-        }
+        return switch (dataType) {
+            case "bigint" -> "Long";
+            case "varchar" -> "String";
+            case "int" -> "Integer";
+            case "tinyint" -> "Integer/Boolean";
+            case "double" -> "Double";
+            case "datetime", "timestamp" -> "Date";
+            default -> throw new RuntimeException("不识别的类型，请补充至源代码");
+        };
     }
 
     /**
@@ -88,7 +101,7 @@ public class IndexService {
      * @param columnName
      * @return
      */
-    String dash2Camel(String columnName) {
+    public String dash2Camel(String columnName) {
         String lowerColumnName=columnName.toLowerCase();
         String[] propertyNameParts=lowerColumnName.split("_");
         if (propertyNameParts.length==1){
@@ -136,11 +149,34 @@ public class IndexService {
         return new MutablePair<>(c.getColumnName(),dash2Camel(c.getColumnName()));
     }
 
-    public List<MutablePair<String,String>> selectInsertColumnsContent(String name) {
+    public List<ColumnsVO> selectInsertColumnsContent(String name) {
         var columns=schemaMapper.selectColumnsByTableName(schema,name);
         return columns.stream().filter(c->{
            var cn= c.getColumnName();
            return !cn.equals("ID") && !cn.equals("CREATE_TIME") && !cn.equals("UPDATE_TIME");
-        }).map(c-> new MutablePair<>(c.getColumnName(),dash2Camel(c.getColumnName()))).collect(Collectors.toList());
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 查询单元测试元信息
+     * @param name
+     */
+    public UnitTestMetaVO selectUnitTestMeta(String name) {
+        var insertColumns=selectInsertColumnsContent(name);
+        UnitTestMetaVO vo=new UnitTestMetaVO();
+        List<UnitTestMetaVO.InsertTestMeta> list=insertColumns.stream().map(c->{
+            UnitTestMetaVO.InsertTestMeta meta=new UnitTestMetaVO.InsertTestMeta();
+            meta.setDataType(mysqlType2JavaType(c.getDataType()));
+            String varName=dash2Camel(c.getColumnName());
+            meta.setVarName(varName);
+            meta.setVarValue(randomValueInsert(meta.getDataType()));
+            meta.setVarValueUpdated(randomValueUpdate(meta.getDataType()));
+            String accessorSuffix=Character.toUpperCase(varName.charAt(0))+varName.substring(1);
+            meta.setSetterName("set"+accessorSuffix);
+            meta.setGetterName("get"+accessorSuffix);
+            return meta;
+        }).collect(Collectors.toList());
+        vo.setInsertTestMetaList(list);
+        return vo;
     }
 }

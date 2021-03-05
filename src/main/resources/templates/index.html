@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>首页</title>
+    <link rel="stylesheet" type="text/css" href="/css/codeRegion.css" />
+    <script type="text/javascript" src="/js/copy.js"></script>
 </head>
 <body>
 <div>
@@ -12,10 +14,22 @@
         <li>表名和字段名使用大写字母</li>
         <li>原则上每张表都应具备ID、CREATE_TIME、UPDATE_TIME三个基础字段</li>
     </ol>
+    <span>模板建表语句：</span>
+    <button onclick="copyToClip('ddlTemp')">复制</button>
+    <div class="codeRegion" id="ddlTemp">
+        create table YOUR_TABLE_NAME<br/>
+        (<br/>
+        ID bigint auto_increment comment '主键'<br/>
+        primary key,<br/>
+        CREATE_TIME datetime default CURRENT_TIMESTAMP not null comment '创建时间',<br/>
+        UPDATE_TIME datetime default CURRENT_TIMESTAMP not null comment '修改时间'<br/>
+        )<br/>
+        comment '表释义';
+    </div>
 </div>
 <form id="selectTableForm" action="/gen/index">
     <label>按表名搜索：
-    <input type="text" placeholder="输入表名模糊查询" name="name">
+        <input type="text" placeholder="输入表名模糊查询" name="name">
     </label>
 </form>
 <table border="1">
@@ -24,12 +38,13 @@
         <th>表注释</th>
         <th>操作</th>
     </tr>
-    <tr  th:each="table : ${tables}">
+    <tr th:each="table : ${tables}">
         <td th:text="${table.tableName}"></td>
         <td th:text="${table.tableDesc}"></td>
-        <td >
+        <td>
             <a th:href="@{'/gen/pojo/?table='+${table.tableName}}">POJO属性</a>
             <a th:href="@{'/gen/mapper/?table='+${table.tableName}}">mapper常用节点</a>
+            <a th:href="@{'/gen/template/?table='+${table.tableName}}">模板代码</a>
         </td>
     </tr>
 </table>
