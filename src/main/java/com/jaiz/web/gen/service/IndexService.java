@@ -88,7 +88,7 @@ public class IndexService {
         return switch (dataType) {
             case "bigint" -> "Long";
             case "varchar" -> "String";
-            case "int" -> "Integer";
+            case "int", "smallint","mediumint" -> "Integer";
             case "tinyint" -> "Integer/Boolean";
             case "double" -> "Double";
             case "datetime", "timestamp" -> "Date";
