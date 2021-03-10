@@ -251,6 +251,7 @@ public class IndexService {
         );
         testResourcesDir.mkdirs();
 
+        //获取模板文件
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
         Template poTmpl,mapperTmpl,mapperXMLTmpl,testTmpl,pomTmpl,propertiesTmpl;
         try {
@@ -274,29 +275,29 @@ public class IndexService {
             var tableName=table.getTableName();
             var columns=schemaMapper.selectColumnsByTableName(schema,tableName);
             var pojoProperties=columns.stream().map(this::column2Property).collect(Collectors.toList());
-            String className=NameUtil.dashName2BigCamel(tableName);
+            //生成PO
+            String poClassName=NameUtil.dashName2BigCamel(tableName);
+            String poPackageName=param.getBasePackage()+".entity.po";
             PoTmplVO poParams=new PoTmplVO();
             poParams.setAttrs(pojoProperties);
-            poParams.setClassName(className);
-            poParams.setPackageName(param.getBasePackage()+".entity.po");
+            poParams.setClassName(poClassName);
+            poParams.setPackageName(poPackageName);
             poParams.setTableName(tableName);
-            File poFile = new File(poDir.getAbsolutePath()+File.separatorChar+className+".java");
-            Writer out= null;
-            try {
-                out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(poFile)));
-                poTmpl.process(poParams,out);
-            } catch (TemplateException | IOException e) {
-                log.error("模板渲染异常",e);
-                throw new RuntimeException("模板渲染异常");
-            }finally {
-                if (out!=null){
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        log.error("out关闭异常");
-                    }
-                }
-            }
+            genFile(poDir.getAbsolutePath()+File.separatorChar+poClassName+".java",poTmpl,poParams);
+
+            //生成mapper接口
+            MapperTmplVO mapperParams=new MapperTmplVO();
+            String mapperClassName=poClassName+"BaseMapper";
+            mapperParams.setMapperClassName(mapperClassName);
+            mapperParams.setPackageName(param.getBasePackage()+".mapper");
+            mapperParams.setPoClassName(poClassName);
+            mapperParams.setPoPackageName(poPackageName);
+            genFile(mapperDir.getAbsolutePath()+File.separatorChar+mapperClassName+".java",mapperTmpl,mapperParams);
+
+            //生成mapper xml
+            Mapper
+
+
         });
 
 
@@ -304,5 +305,30 @@ public class IndexService {
         //给所有mapper接口创建对象的Test类
         //创建pom文件
         //创建测试用properties文件
+    }
+
+    /**
+     * 根据template文件和参数在指定位置生成文件
+     * @param pathName
+     * @param poTmpl
+     */
+    private void genFile(String pathName, Template poTmpl,Object params) {
+        Writer out= null;
+        File poFile = new File(pathName);
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(poFile)));
+            poTmpl.process(params,out);
+        } catch (TemplateException | IOException e) {
+            log.error("模板渲染异常",e);
+            throw new RuntimeException("模板渲染异常");
+        }finally {
+            if (out!=null){
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    log.error("out关闭异常");
+                }
+            }
+        }
     }
 }
