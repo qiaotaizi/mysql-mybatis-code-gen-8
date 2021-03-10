@@ -1,18 +1,30 @@
 package com.jaiz.web.gen.controller;
 
+import com.jaiz.web.gen.eneity.GenDependencyGoParam;
 import com.jaiz.web.gen.eneity.PojoPropertiesVO;
 import com.jaiz.web.gen.eneity.TablesVO;
 import com.jaiz.web.gen.service.IndexService;
+import com.jaiz.web.gen.utils.NameUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ZeroCopyHttpOutputMessage;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.jta.SpringJtaSynchronizationAdapter;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import reactor.core.publisher.Mono;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Controller
@@ -58,9 +70,6 @@ public class GenController {
      */
     @GetMapping("mapper")
     public String genMapper(Model model,@RequestParam("table") String name){
-        //MapperNodesVO mapperNodes=indexService.selectMapperNodes(name);
-        //var columnPropertyPairs=indexService.selectInsertColumnsContent(name);
-        //model.addAttribute("cpPairs",columnPropertyPairs);
         var mapperNodes=indexService.selectMapperNodes(name);
         model.addAttribute("mapperNodes",mapperNodes);
         model.addAttribute("tableName",name);
@@ -73,13 +82,44 @@ public class GenController {
         model.addAttribute("unitTestMeta",unitTestMeta);
         var mapperNodes=indexService.selectMapperNodes(name);
         model.addAttribute("mapperNodes",mapperNodes);
-        String pojoName=indexService.dash2Camel(name);
-        String pojoClassName= Character.toUpperCase(pojoName.charAt(0))+pojoName.substring(1);
+        String pojoClassName= NameUtil.dashName2BigCamel(name);
         model.addAttribute("pojoName",pojoClassName);
         model.addAttribute("tableName",name);
         List<PojoPropertiesVO> props=indexService.selectPojoProperties(name);
         model.addAttribute("props",props);
         return "templ";
+    }
+
+    /**
+     * 生成完整依赖包页面
+     * @return
+     */
+    @GetMapping("dependency")
+    public String genDependency(Model model){
+        //查询当前数据库包含的表数量
+        var tableCount=indexService.selectTableCount();
+        model.addAttribute("tableCount",tableCount);
+        return "dependency";
+    }
+
+
+
+    @PostMapping("/dependency/go")
+    public Mono<Void> genDependencyAndZipAndDownload(ServerHttpResponse response, @Validated GenDependencyGoParam param) throws IOException {
+        log.info("下载参数, {}",param.toString());
+        //uuid生成下载编号
+        String tmpBaseDirName=UUID.randomUUID().toString();
+        indexService.genDependencyFiles(param,tmpBaseDirName);
+        //给artifact_name目录打压缩包
+
+        //开启文件下载
+
+        ZeroCopyHttpOutputMessage zeroCopyResponse = (ZeroCopyHttpOutputMessage) response;
+        response.getHeaders().set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=test.txt");
+        response.getHeaders().setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        File file = new File("/tmp/test.txt");
+        return zeroCopyResponse.writeWith(file, 0, file.length());
     }
 
 }

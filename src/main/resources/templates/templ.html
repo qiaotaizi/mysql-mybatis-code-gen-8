@@ -74,10 +74,6 @@
     <span th:each="cp:${mapperNodes.resultMapCpPairs}">
         &lt;result column="<span th:text="${cp.left}"></span>" property="<span th:text="${cp.right}"></span>" /&gt;<br/>
     </span>
-    <span>&lt;result column="CREATE_TIME" property="createTime" /&gt;</span>
-    <br/>
-    <span>&lt;result column="UPDATE_TIME" property="updateTime" /&gt;</span>
-    <br/>
     <span>&lt;/resultMap&gt;</span><br /><br />
 
     <span>&lt;!-- 根据id查询 --&gt;</span><br/>

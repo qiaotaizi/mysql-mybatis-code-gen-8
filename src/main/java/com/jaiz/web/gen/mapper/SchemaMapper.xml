@@ -36,5 +36,9 @@
             TABLE_NAME=#{name}
         order by ORDINAL_POSITION
     </select>
+    <select id="selectTableCount" resultType="java.lang.Integer">
+        select count(*) from information_schema.TABLES
+        where TABLE_SCHEMA=#{schemaName}
+    </select>
 
 </mapper>

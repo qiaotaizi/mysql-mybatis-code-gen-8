@@ -22,4 +22,11 @@ public interface SchemaMapper {
      * @return
      */
     List<ColumnsVO> selectColumnsByTableName(@Param("schema") String schema, @Param("name") String name);
+
+    /**
+     * 统计表数量
+     * @param schema
+     * @return
+     */
+    int selectTableCount(@Param("schemaName") String schema);
 }

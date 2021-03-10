@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>完整依赖生成</title>
+    <script type="text/javascript" src="/js/copy.js"></script>
+    <script type="text/javascript" src="/js/showHide.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/codeRegion.css" />
+</head>
+<body>
+<div class="codeRegion">
+    <span>mapper依赖包结构：</span><br />
+    <span>${artifact_name}/src/main/java/${base_package}/mapper/*BaseMapper.java</span><br/>
+    <span>${artifact_name}/src/main/java/${base_package}/mapper/*BaseMapper.xml</span><br/>
+    <span>${artifact_name}/src/main/java/${base_package}/entity/po/*PO.java</span><br/>
+    <span>${artifact_name}/src/test/java/${base_package}/mapper/*BaseMapperTest.java</span><br/>
+    <span>${artifact_name}/src/test/java/${base_package}/TestApplication.java</span><br/>
+    <span>${artifact_name}/src/test/resources/application.properties</span><br/>
+    <span>${artifact_name}/pom.xml</span>
+</div>
+<span>* 参数说明：</span>
+<table>
+    <tr>
+        <th>参数名</th>
+        <th>参数释义</th>
+        <th>举例</th>
+    </tr>
+    <tr>
+        <td>artifact_name</td>
+        <td>依赖包名称</td>
+        <td>my-project-mapper</td>
+    </tr>
+    <tr>
+        <td>base_package</td>
+        <td>依赖包基础包名</td>
+        <td>my.project</td>
+    </tr>
+</table>
+<span>当前数据库共</span><span th:text="${tableCount}"></span><span>个表</span>
+<div class="codeRegion">
+    <form action="/gen/dependency/go" method="post">
+        <label>
+            artifact_name
+            <input name="artifactName" type="text" placeholder="my-project-mapper">
+        </label><br />
+        <label>
+            base_package
+            <input name="basePackage" type="text" placeholder="my.project">
+        </label><br />
+        <button type="submit">提交</button>
+        <span>* 点击后请稍等片刻，下载即将开始</span>
+    </form>
+</div>
+</body>
+</html>
