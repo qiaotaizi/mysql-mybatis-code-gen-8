@@ -4,6 +4,7 @@ import com.jaiz.web.gen.constant.Const;
 import com.jaiz.web.gen.eneity.*;
 import com.jaiz.web.gen.mapper.SchemaMapper;
 import com.jaiz.web.gen.utils.NameUtil;
+import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.TemplateException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -260,9 +261,10 @@ public class IndexService {
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
         Template poTmpl,mapperTmpl,mapperXMLTmpl,testTmpl,pomTmpl,propertiesTmpl,testMainClassTmpl;
         try {
-            var resourceURL=this.getClass().getClassLoader().getResource("freemarker");
-            log.info("resource: file = {}, path = {}",resourceURL.getFile(),resourceURL.getPath());
-            configuration.setDirectoryForTemplateLoading(new File(resourceURL.getFile()));
+            //var resourceURL=this.getClass().getClassLoader().getResource("freemarker");
+            //log.info("resource: file = {}, path = {}",resourceURL.getFile(),resourceURL.getPath());
+            //configuration.setDirectoryForTemplateLoading(new File("classpath:freemarker"));
+            configuration.setTemplateLoader(new ClassTemplateLoader(this.getClass(),"/freemarker/"));
             poTmpl=configuration.getTemplate("po.ftl");
             mapperTmpl=configuration.getTemplate("mapper.ftl");
             mapperXMLTmpl=configuration.getTemplate("mapperXML.ftl");
