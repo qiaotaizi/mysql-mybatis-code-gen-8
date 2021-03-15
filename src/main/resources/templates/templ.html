@@ -125,6 +125,7 @@
     <span>@Transactional</span><br/>
     <span>@Rollback</span><br/>
     <span>public void baseCrudTest(){</span><br/>
+    <span>FastDateFormat format =FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");</span>
     <span>//初始化测试字段</span><br/>
     <span th:each="insertMeta:${unitTestMeta.insertTestMetaList}">
         <span th:text="${insertMeta.dataType}+' '+${insertMeta.varName}+'Insert = '+${insertMeta.varValue}+';'"></span><br />

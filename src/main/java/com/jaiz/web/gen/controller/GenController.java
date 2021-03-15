@@ -1,12 +1,15 @@
 package com.jaiz.web.gen.controller;
 
+import com.jaiz.web.gen.constant.Const;
 import com.jaiz.web.gen.eneity.GenDependencyGoParam;
 import com.jaiz.web.gen.eneity.PojoPropertiesVO;
 import com.jaiz.web.gen.eneity.TablesVO;
 import com.jaiz.web.gen.service.IndexService;
+import com.jaiz.web.gen.utils.CompressUtil;
 import com.jaiz.web.gen.utils.NameUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ZeroCopyHttpOutputMessage;
@@ -21,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,9 @@ public class GenController {
 
     @Autowired
     private IndexService indexService;
+
+    @Value("${gen.base.dir}")
+    private String tmpDir;
 
 
     /**
@@ -111,14 +116,14 @@ public class GenController {
         String tmpBaseDirName=UUID.randomUUID().toString();
         indexService.genDependencyFiles(param,tmpBaseDirName);
         //给artifact_name目录打压缩包
+        String genPath=tmpDir+File.separatorChar+ Const.THIS_PROJECT_NAME_ABBR+File.separatorChar+tmpBaseDirName+File.separatorChar+param.getArtifactName();
+        CompressUtil.compress(genPath,genPath+".zip");
 
         //开启文件下载
-
         ZeroCopyHttpOutputMessage zeroCopyResponse = (ZeroCopyHttpOutputMessage) response;
-        response.getHeaders().set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=test.txt");
+        response.getHeaders().set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+param.getArtifactName()+".zip");
         response.getHeaders().setContentType(MediaType.MULTIPART_FORM_DATA);
-
-        File file = new File("/tmp/test.txt");
+        File file = new File(genPath+".zip");
         return zeroCopyResponse.writeWith(file, 0, file.length());
     }
 

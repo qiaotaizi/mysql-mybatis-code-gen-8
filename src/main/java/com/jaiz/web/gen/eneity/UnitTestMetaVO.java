@@ -9,16 +9,6 @@ import java.util.List;
 @Setter
 public class UnitTestMetaVO {
 
-    private List<InsertTestMeta> insertTestMetaList;
+    private List<InsertTestMetaVO> insertTestMetaList;
 
-    @Getter
-    @Setter
-    public static class InsertTestMeta{
-        private String dataType;
-        private String varName;
-        private String varValue;
-        private String varValueUpdated;
-        private String setterName;
-        private String getterName;
-    }
 }

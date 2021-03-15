@@ -1,5 +1,6 @@
 package com.jaiz.web.gen.service;
 
+import com.jaiz.web.gen.constant.Const;
 import com.jaiz.web.gen.eneity.*;
 import com.jaiz.web.gen.mapper.SchemaMapper;
 import com.jaiz.web.gen.utils.NameUtil;
@@ -9,7 +10,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.template.TemplateAvailabilityProvider;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Service;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -24,6 +25,9 @@ public class IndexService {
 
     @Autowired
     private SchemaMapper schemaMapper;
+
+    @Autowired
+    private DataSourceProperties dataSourceProperties;
 
     @Autowired
     @Qualifier("schemaName")
@@ -77,9 +81,8 @@ public class IndexService {
             case "Long" -> "123L";
             case "String" -> "\"RandomString\"";
             case "Integer" -> "123";
-            case "Integer/Boolean" -> "123/true";
             case "Double" -> "123.0";
-            case "Date" -> "DateUtil.parse(\"2021-01-01 03:02:01\")";
+            case "Date" -> "format.parse(\"2021-01-01 03:02:01\")";
             default -> throw new RuntimeException("不识别的类型，请补充至源代码");
         };
     }
@@ -89,9 +92,8 @@ public class IndexService {
             case "Long" -> "321L";
             case "String" -> "\"StringRandom\"";
             case "Integer" -> "321";
-            case "Integer/Boolean" -> "321/false";
             case "Double" -> "321.2";
-            case "Date" -> "DateUtil.parse(\"2021-02-02 01:02:03\")";
+            case "Date" -> "format.parse(\"2021-02-02 01:02:03\")";
             default -> throw new RuntimeException("不识别的类型，请补充至源代码");
         };
     }
@@ -106,8 +108,7 @@ public class IndexService {
         return switch (dataType) {
             case "bigint" -> "Long";
             case "varchar","text" -> "String";
-            case "int", "smallint", "mediumint" -> "Integer";
-            case "tinyint" -> "Integer/Boolean";
+            case "int", "smallint", "mediumint","tinyint" -> "Integer";
             case "double" -> "Double";
             case "datetime", "timestamp" -> "Date";
             default -> throw new RuntimeException("不识别的类型，请补充至源代码: "+dataType);
@@ -156,8 +157,8 @@ public class IndexService {
     public UnitTestMetaVO selectUnitTestMeta(String name) {
         var insertColumns = selectInsertColumnsContent(name);
         UnitTestMetaVO vo = new UnitTestMetaVO();
-        List<UnitTestMetaVO.InsertTestMeta> list = insertColumns.stream().map(c -> {
-            UnitTestMetaVO.InsertTestMeta meta = new UnitTestMetaVO.InsertTestMeta();
+        List<InsertTestMetaVO> list = insertColumns.stream().map(c -> {
+            InsertTestMetaVO meta = new InsertTestMetaVO();
             meta.setDataType(mysqlType2JavaType(c.getDataType()));
             String varName = NameUtil.dashName2Camel(c.getColumnName());
             meta.setVarName(varName);
@@ -193,7 +194,7 @@ public class IndexService {
         File baseDir = new File(
                 tmpDir +
                         File.separatorChar +
-                        "mmcg8" +
+                        Const.THIS_PROJECT_NAME_ABBR +
                         File.separatorChar +
                         randomDirName +
                         File.separatorChar +
@@ -245,15 +246,19 @@ public class IndexService {
                         "mapper");
         testMapperDir.mkdirs();
         File testResourcesDir=new File(
-                testBaseDir.getAbsolutePath()+
-                        File.separatorChar+
+                baseDir.getAbsolutePath()
+                        + File.separatorChar
+                        + "src"
+                        + File.separatorChar +
+                        "test" +
+                        File.separatorChar +
                         "resources"
         );
         testResourcesDir.mkdirs();
 
         //获取模板文件
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
-        Template poTmpl,mapperTmpl,mapperXMLTmpl,testTmpl,pomTmpl,propertiesTmpl;
+        Template poTmpl,mapperTmpl,mapperXMLTmpl,testTmpl,pomTmpl,propertiesTmpl,testMainClassTmpl;
         try {
             var resourceURL=this.getClass().getClassLoader().getResource("freemarker");
             log.info("resource: file = {}, path = {}",resourceURL.getFile(),resourceURL.getPath());
@@ -264,6 +269,7 @@ public class IndexService {
             testTmpl=configuration.getTemplate("test.ftl");
             pomTmpl=configuration.getTemplate("pom.ftl");
             propertiesTmpl=configuration.getTemplate("prop.ftl");
+            testMainClassTmpl=configuration.getTemplate("testMainClass.ftl");
         } catch (IOException e) {
             log.error("获取模板失败",e);
             throw new RuntimeException("获取模板失败");
@@ -289,22 +295,82 @@ public class IndexService {
             MapperTmplVO mapperParams=new MapperTmplVO();
             String mapperClassName=poClassName+"BaseMapper";
             mapperParams.setMapperClassName(mapperClassName);
-            mapperParams.setPackageName(param.getBasePackage()+".mapper");
+            String mapperPackageName=param.getBasePackage()+".mapper";
+            mapperParams.setPackageName(mapperPackageName);
             mapperParams.setPoClassName(poClassName);
             mapperParams.setPoPackageName(poPackageName);
             genFile(mapperDir.getAbsolutePath()+File.separatorChar+mapperClassName+".java",mapperTmpl,mapperParams);
 
             //生成mapper xml
-            Mapper
+            List<String> columnNames=columns.stream().map(ColumnsVO::getColumnName).collect(Collectors.toList());
+            MapperXMLTmplVO mapperXMLTmplVO=new MapperXMLTmplVO();
+            mapperXMLTmplVO.setColumnNames(columnNames);
+            mapperXMLTmplVO.setMapperClassName(mapperClassName);
+            mapperXMLTmplVO.setPackageName(mapperPackageName);
+            mapperXMLTmplVO.setPoClassName(poClassName);
+            var resultMapCpPairs = columns.stream().filter(c -> {
+                //不要id
+                return !c.getColumnName().equals("ID");
+            }).map(this::column2CpPair).collect(Collectors.toList());
+            var updateInsertCpPairs = columns.stream().filter(c -> {
+                //不要id，updateTime,createTime
+                return !c.getColumnName().equals("ID") && !c.getColumnName().equals("UPDATE_TIME") && !c.getColumnName().equals("CREATE_TIME");
+            }).map(this::column2CpPair).collect(Collectors.toList());
+            mapperXMLTmplVO.setResultMapCpPairs(resultMapCpPairs);
+            mapperXMLTmplVO.setTableName(tableName);
+            mapperXMLTmplVO.setUpdateInsertCpPairs(updateInsertCpPairs);
+            mapperXMLTmplVO.setPoPackageName(poPackageName);
+            genFile(mapperDir.getAbsolutePath()+File.separatorChar+mapperClassName+".xml",mapperXMLTmpl,mapperXMLTmplVO);
 
+            //创建test类
+            TestTmplVO testParam=new TestTmplVO();
+            List<InsertTestMetaVO> insertTestMetaVOS = columns.stream().filter(c -> {
+                //不要id，updateTime,createTime
+                return !c.getColumnName().equals("ID") && !c.getColumnName().equals("UPDATE_TIME") && !c.getColumnName().equals("CREATE_TIME");
+            }).map(c -> {
+                InsertTestMetaVO meta = new InsertTestMetaVO();
+                meta.setDataType(mysqlType2JavaType(c.getDataType()));
+                String varName = NameUtil.dashName2Camel(c.getColumnName());
+                meta.setVarName(varName);
+                meta.setVarValue(randomValueInsert(meta.getDataType()));
+                meta.setVarValueUpdated(randomValueUpdate(meta.getDataType()));
+                String accessorSuffix = Character.toUpperCase(varName.charAt(0)) + varName.substring(1);
+                meta.setSetterName("set" + accessorSuffix);
+                meta.setGetterName("get" + accessorSuffix);
+                return meta;
+            }).collect(Collectors.toList());
+            testParam.setInsertTestMetaList(insertTestMetaVOS);
+            testParam.setMapperClassName(mapperClassName);
+            testParam.setMapperPackageName(mapperPackageName);
+            String testClassName=poClassName+"BaseTest";
+            testParam.setTestClassName(testClassName);
+            testParam.setPoClassName(poClassName);
+            testParam.setPoPackageName(poPackageName);
+            String artifactBigCamelName=NameUtil.artifactName2BigCamel(param.getArtifactName());
+            log.info("artifactBigCamelName = {}",artifactBigCamelName);
+            testParam.setArtifactBigCamelName(artifactBigCamelName);
+            testParam.setBasePackage(param.getBasePackage());
+            genFile(testMapperDir.getAbsolutePath()+File.separatorChar+testClassName+".java",testTmpl,testParam);
 
+            //创建pom文件
+            PomTmplVO pomParam=new PomTmplVO();
+            pomParam.setBasePackage(param.getBasePackage());
+            pomParam.setArtifactId(param.getArtifactName());
+            genFile(baseDir.getAbsolutePath()+File.separatorChar+"pom.xml",pomTmpl,pomParam);
+
+            //创建properties文件
+            PropTmplVO propParam=new PropTmplVO();
+            propParam.setSpringDatasourceUrl(dataSourceProperties.getUrl());
+            propParam.setSpringDatasourceUserName(dataSourceProperties.getUsername());
+            propParam.setSpringDatasourcePassword(dataSourceProperties.getPassword());
+            genFile(testResourcesDir.getAbsolutePath()+File.separatorChar+"application.properties",propertiesTmpl,propParam);
+
+            //创建TestApplication文件
+            TestAppTmplVO testAppTmplParam=new TestAppTmplVO();
+            testAppTmplParam.setBasePackage(param.getBasePackage());
+            testAppTmplParam.setArtifactBigCamelName(artifactBigCamelName);
+            genFile(testBaseDir.getAbsolutePath()+File.separatorChar+artifactBigCamelName+"TestApplication.java",testMainClassTmpl,testAppTmplParam);
         });
-
-
-        //给所有表创建mapper接口类、mapper.xml和PO类
-        //给所有mapper接口创建对象的Test类
-        //创建pom文件
-        //创建测试用properties文件
     }
 
     /**

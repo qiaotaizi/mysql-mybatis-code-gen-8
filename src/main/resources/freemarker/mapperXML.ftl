@@ -18,7 +18,7 @@
 
     <!-- 根据id查询 -->
     <select id="selectById" resultMap="fullMap">
-        SELECT <include refid="fullColumns" /> FROM #{tableName} WHERE ID = #\{id\}
+        SELECT <include refid="fullColumns" /> FROM ${tableName} WHERE ID = <#noparse>#{</#noparse>id<#noparse>}</#noparse>
     </select>
 
     <!-- 根据id更新非空字段 -->
@@ -26,12 +26,12 @@
         UPDATE ${tableName}
         <set>
             <#list updateInsertCpPairs as cpPair>
-                <if test="#\{${cpPair.right}\} != null">
-                    ${cpPair.left} = #\{${cpPair.right}\},
+                <if test="<#noparse>#{</#noparse>${cpPair.right}<#noparse>}</#noparse> != null">
+                    ${cpPair.left} = <#noparse>#{</#noparse>${cpPair.right}<#noparse>}</#noparse>,
                 </if>
             </#list>
         </set>
-        WHERE ID=#\{id\}
+        WHERE ID=<#noparse>#{</#noparse>id<#noparse>}</#noparse>
     </update>
 
     <!-- 全量insert -->
@@ -43,13 +43,13 @@
         </#list>
         ) VALUES (
         <#list updateInsertCpPairs as cpPair>
-            #\{${cpPair.right}\}<#if cpPair_has_next>,</#if>
+            <#noparse>#{</#noparse>${cpPair.right}<#noparse>}</#noparse><#if cpPair_has_next>,</#if>
         </#list>
         )
     </insert>
 
     <!-- 根据id删除 -->
     <delete id="deleteById">
-        DELETE FROM ${tableName} WHERE ID = #{id}
+        DELETE FROM ${tableName} WHERE ID = <#noparse>#{</#noparse>id<#noparse>}</#noparse>
     </delete>
 </mapper>

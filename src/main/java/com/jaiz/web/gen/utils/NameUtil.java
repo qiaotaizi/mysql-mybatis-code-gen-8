@@ -35,4 +35,21 @@ public class NameUtil {
         return Character.toUpperCase(camel.charAt(0))+camel.substring(1);
     }
 
+    /**
+     * xxx-xx-xxx => XxxXxXxx
+     * @param artifactName
+     * @return
+     */
+    public static String artifactName2BigCamel(String artifactName) {
+        var ss=artifactName.split("-");
+        StringBuilder sb=new StringBuilder();
+        for (String word : ss) {
+            char firstCharUpper = Character.toUpperCase(word.charAt(0));
+            sb.append(firstCharUpper);
+            if (word.length() > 1) {
+                sb.append(word.substring(1));
+            }
+        }
+        return sb.toString() ;
+    }
 }
