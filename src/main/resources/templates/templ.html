@@ -86,7 +86,7 @@
     UPDATE <span th:text="${tableName}"></span><br/>
     <span>&lt;set&gt;</span><br/>
     <span th:each="cp:${mapperNodes.updateInsertCpPairs}">
-        &lt;if test="#{<span th:text="${cp.right}"></span>} != null"&gt;<br/>
+        &lt;if test="<span th:text="${cp.right}"></span> != null"&gt;<br/>
         <span th:text="${cp.left+' = #{'+cp.right+'},'}"></span><br/>
         &lt;/if&gt;<br/>
     </span>
